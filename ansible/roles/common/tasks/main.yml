@@ -1,0 +1,41 @@
+# code: language=ansible
+---
+- name: Install Common Requirements
+  ansible.builtin.apt:
+    update_cache: true
+    pkg:
+      - policycoreutils
+    state: present
+
+# To make sure the the role is idempotent. The tasks after this will only be executed if Datadog hasn't been installed already.
+- name: Check if Datadog is already installed
+  ansible.builtin.shell:
+    cmd: 'sudo test -d /etc/datadog-agent/'
+  register: datadog_installed
+  failed_when: false
+
+- name: Import Datadog API Key
+  ansible.builtin.include_vars:
+    file: datadog-secrets.yml
+  when: datadog_installed.rc != 0
+
+- name: Execute Datadog installation script
+  ansible.builtin.shell:
+    cmd: 'DD_API_KEY={{ datadog_api_key }} DD_SITE="us5.datadoghq.com" bash -c "$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)"'
+  vars:
+    datadog_api_key: '{{ datadog_api_key }}'
+  args:
+    executable: /bin/bash
+  when: datadog_installed.rc != 0
+
+- name: Check if Agent is running
+  ansible.builtin.shell:
+    cmd: "sudo service datadog-agent status | tail -3"
+  register: datadog_running
+
+- name: Restart Agent
+  ansible.builtin.shell:
+    cmd: "sudo service datadog-agent restart"
+  when: >
+    ("Error" in datadog_running.stdout) or
+    ("Stopped" in datadog_running.stdout)

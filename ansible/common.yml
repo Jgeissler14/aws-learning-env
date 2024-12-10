@@ -1,0 +1,9 @@
+# code: language=ansible
+# Common Ansible Playbook
+---
+- name: Common
+  hosts: common_nodes
+  gather_facts: true
+  roles:
+    - role: common
+      become: true
