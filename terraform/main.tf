@@ -1,4 +1,3 @@
-# Fetch the latest AMI for the Nginx instance
 data "aws_ami" "nginx" {
   most_recent = true
 
@@ -8,7 +7,6 @@ data "aws_ami" "nginx" {
   }
 }
 
-# Security Group for Load Balancer
 resource "aws_security_group" "lb_sg" {
   name_prefix = "nginx-lb-sg"
 
@@ -34,7 +32,6 @@ resource "aws_security_group" "lb_sg" {
   }
 }
 
-# Security Group for EC2 instance
 resource "aws_security_group" "instance_sg" {
   name_prefix = "nginx-instance-sg"
 
@@ -60,8 +57,7 @@ resource "aws_security_group" "instance_sg" {
   }
 }
 
-# EC2 Instance (Blue Environment)
-resource "aws_instance" "instance_blue" {
+resource "aws_instance" "instance" {
   ami                         = data.aws_ami.nginx.id
   instance_type               = "t2.micro"
   key_name                    = "aws-learning-env"
@@ -74,29 +70,10 @@ resource "aws_instance" "instance_blue" {
   }
 
   tags = {
-    Name = "nginx-instance-blue"
+    Name = "nginx-instance"
   }
 }
 
-# EC2 Instance (Green Environment)
-resource "aws_instance" "instance_green" {
-  ami                         = data.aws_ami.nginx.id
-  instance_type               = "t2.micro"
-  key_name                    = "aws-learning-env"
-  associate_public_ip_address = true
-  vpc_security_group_ids      = [aws_security_group.instance_sg.id]
-  subnet_id                   = var.subnets[0]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = {
-    Name = "nginx-instance-green"
-  }
-}
-
-# Load Balancer
 resource "aws_lb" "nginx_lb" {
   name               = "nginx-lb"
   internal           = false
@@ -107,7 +84,22 @@ resource "aws_lb" "nginx_lb" {
   enable_deletion_protection = false
 }
 
-# Blue Target Group for Load Balancer
+resource "aws_lb_target_group" "nginx_tg" {
+  name     = "nginx-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    interval            = 30
+    path                = "/"
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    protocol            = "HTTP"
+  }
+}
+
 resource "aws_lb_target_group" "nginx_tg_blue" {
   name     = "nginx-tg-blue"
   port     = 80
@@ -124,38 +116,15 @@ resource "aws_lb_target_group" "nginx_tg_blue" {
   }
 }
 
-# Green Target Group for Load Balancer
-resource "aws_lb_target_group" "nginx_tg_green" {
-  name     = "nginx-tg-green"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
-
-  health_check {
-    interval            = 30
-    path                = "/"
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    protocol            = "HTTP"
+resource "aws_lb_target_group_attachment" "nginx_attachment" {
+  target_group_arn = aws_lb_target_group.nginx_tg.arn
+  target_id        = aws_instance.instance.id
+  port             = 80
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
-# Attach Blue Instance to Blue Target Group
-resource "aws_lb_target_group_attachment" "nginx_attachment_blue" {
-  target_group_arn = aws_lb_target_group.nginx_tg_blue.arn
-  target_id        = aws_instance.instance_blue.id
-  port             = 80
-}
-
-# Attach Green Instance to Green Target Group
-resource "aws_lb_target_group_attachment" "nginx_attachment_green" {
-  target_group_arn = aws_lb_target_group.nginx_tg_green.arn
-  target_id        = aws_instance.instance_green.id
-  port             = 80
-}
-
-# Load Balancer Listener (Initially forwards traffic to Blue target group)
 resource "aws_lb_listener" "nginx_listener" {
   load_balancer_arn = aws_lb.nginx_lb.arn
   port              = 80
@@ -163,7 +132,7 @@ resource "aws_lb_listener" "nginx_listener" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.nginx_tg_blue.arn
+    target_group_arn = aws_lb_target_group.nginx_tg.arn
   }
 }
 
@@ -173,7 +142,7 @@ resource "aws_lb_listener_rule" "blue_green_rule" {
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.nginx_tg.arn
+    target_group_arn = aws_lb_target_group.nginx_tg_blue.arn
   }
 
   condition {
