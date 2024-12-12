@@ -15,7 +15,7 @@ resource "aws_security_group" "lb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allowing public access to the LB on port 80
+    cidr_blocks = ["0.0.0.0/0"] # Allowing public access to the LB on port 80
   }
 
   egress {
@@ -34,7 +34,7 @@ resource "aws_security_group" "instance_sg" {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.lb_sg.id]  # Only allow traffic from the LB
+    security_groups = [aws_security_group.lb_sg.id] # Only allow traffic from the LB
   }
 
   egress {
@@ -52,7 +52,7 @@ resource "aws_instance" "instance" {
   key_name                    = "aws-learning-env"
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.instance_sg.id]
-  subnet_id                   = var.subnets[0]  # Ensure this is set to a public subnet
+  subnet_id                   = var.subnets[0] # Ensure this is set to a public subnet
 
   lifecycle {
     create_before_destroy = true
@@ -69,7 +69,7 @@ resource "aws_lb" "nginx_lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = var.subnets  # Ensure this points to public subnets
+  subnets            = var.subnets # Ensure this points to public subnets
 
   enable_deletion_protection = false
 }
@@ -96,6 +96,9 @@ resource "aws_lb_target_group_attachment" "nginx_attachment" {
   target_group_arn = aws_lb_target_group.nginx_tg.arn
   target_id        = aws_instance.instance.id
   port             = 80
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Load Balancer Listener (for HTTP)
