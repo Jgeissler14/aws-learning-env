@@ -54,16 +54,12 @@
       file:
         path: /usr/share/nginx/html
         state: directory
-        owner: nginx
-        group: nginx
         mode: '0755'
 
     - name: Copy custom index.html to NGINX server
       copy:
         src: ./index.html
         dest: /usr/share/nginx/html/index.html
-        owner: nginx
-        group: nginx
         mode: '0644'
 
 
@@ -78,7 +74,7 @@
         exposed_ports:
           - "80"
         volumes:
-          - /tmp:/usr/share/nginx/html
+          - /usr/share/nginx/html/:/usr/share/nginx/html
 
     - name: Clean up unnecessary packages
       apt:
