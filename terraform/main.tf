@@ -58,7 +58,7 @@ resource "aws_security_group" "instance_sg" {
 }
 
 resource "aws_instance" "instance" {
-  ami                         = "ami-0736adf4098046399"
+  ami                         = data.aws_ami.nginx.id
   instance_type               = "t2.micro"
   key_name                    = "aws-learning-env"
   associate_public_ip_address = true
@@ -94,7 +94,7 @@ resource "aws_lb_target_group" "nginx_tg" {
     interval            = 30
     path                = "/"
     timeout             = 5
-    healthy_threshold   = 5
+    healthy_threshold   = 0
     unhealthy_threshold = 2
     protocol            = "HTTP"
   }
