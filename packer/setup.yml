@@ -50,6 +50,23 @@
         name: nginx
         source: pull
 
+    - name: Ensure the NGINX web root directory exists
+      file:
+        path: /usr/share/nginx/html
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: '0755'
+
+    - name: Copy custom index.html to NGINX server
+      copy:
+        src: ./index.html
+        dest: /usr/share/nginx/html/index.html
+        owner: nginx
+        group: nginx
+        mode: '0644'
+
+
     - name: Ensure NGINX container is running
       docker_container:
         name: nginx_paas_demo
@@ -60,14 +77,8 @@
           - "80:80"
         exposed_ports:
           - "80"
-
-    - name: Copy custom index.html to Nginx web root
-      copy:
-        src: ./index.html
-        dest: /usr/share/nginx/html/index.html
-        owner: root
-        group: root
-        mode: '0644'
+        volumes:
+          - /tmp:/usr/share/nginx/html
 
     - name: Clean up unnecessary packages
       apt:

@@ -7,7 +7,6 @@ data "aws_ami" "nginx" {
   }
 }
 
-# Security Group for Load Balancer (Public access on port 80)
 resource "aws_security_group" "lb_sg" {
   name_prefix = "nginx-lb-sg"
 
@@ -15,7 +14,14 @@ resource "aws_security_group" "lb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allowing public access to the LB on port 80
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -26,7 +32,6 @@ resource "aws_security_group" "lb_sg" {
   }
 }
 
-# Security Group for EC2 instance (Allow traffic from LB security group on port 80)
 resource "aws_security_group" "instance_sg" {
   name_prefix = "nginx-instance-sg"
 
@@ -34,7 +39,7 @@ resource "aws_security_group" "instance_sg" {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.lb_sg.id] # Only allow traffic from the LB
+    security_groups = [aws_security_group.lb_sg.id]
   }
 
   egress {
@@ -45,14 +50,13 @@ resource "aws_security_group" "instance_sg" {
   }
 }
 
-# EC2 Instance
 resource "aws_instance" "instance" {
   ami                         = data.aws_ami.nginx.id
   instance_type               = "t2.micro"
   key_name                    = "aws-learning-env"
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.instance_sg.id]
-  subnet_id                   = var.subnets[0] # Ensure this is set to a public subnet
+  subnet_id                   = var.subnets[0]
 
   lifecycle {
     create_before_destroy = true
@@ -63,18 +67,16 @@ resource "aws_instance" "instance" {
   }
 }
 
-# Load Balancer
 resource "aws_lb" "nginx_lb" {
   name               = "nginx-lb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = var.subnets # Ensure this points to public subnets
+  subnets            = var.subnets
 
   enable_deletion_protection = false
 }
 
-# Target Group for Load Balancer
 resource "aws_lb_target_group" "nginx_tg" {
   name     = "nginx-tg"
   port     = 80
@@ -91,7 +93,6 @@ resource "aws_lb_target_group" "nginx_tg" {
   }
 }
 
-# Attach EC2 instance to Load Balancer target group
 resource "aws_lb_target_group_attachment" "nginx_attachment" {
   target_group_arn = aws_lb_target_group.nginx_tg.arn
   target_id        = aws_instance.instance.id
@@ -101,7 +102,6 @@ resource "aws_lb_target_group_attachment" "nginx_attachment" {
   }
 }
 
-# Load Balancer Listener (for HTTP)
 resource "aws_lb_listener" "nginx_listener" {
   load_balancer_arn = aws_lb.nginx_lb.arn
   port              = 80
