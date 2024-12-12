@@ -4,7 +4,7 @@ data "aws_ami" "nginx" {
 
   filter {
     name   = "name"
-    values = ["packer-youtube-demo"]
+    values = ["packer-youtube-demo*"]
   }
 }
 
