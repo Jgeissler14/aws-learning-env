@@ -13,6 +13,13 @@ resource "aws_security_group" "lb_sg" {
   name_prefix = "nginx-lb-sg"
 
   ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Replace with your actual IP
+  }
+
+  ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
