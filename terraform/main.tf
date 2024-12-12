@@ -34,7 +34,6 @@ resource "aws_instance" "instance" {
   key_name                    = "aws-learning-env"
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.lb_sg.id]
-  availability_zone           = var.AWS_REGION
 
   lifecycle {
     create_before_destroy = true
@@ -51,7 +50,7 @@ resource "aws_lb" "nginx_lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = ["subnet-1", "subnet-2"]
+  subnets            = var.subnets
 
   enable_deletion_protection = false
 }
@@ -61,7 +60,7 @@ resource "aws_lb_target_group" "nginx_tg" {
   name     = "nginx-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = "vpc-0b5830bd356ede7f1"
+  vpc_id   = var.vpc_id
 
   health_check {
     interval            = 30
