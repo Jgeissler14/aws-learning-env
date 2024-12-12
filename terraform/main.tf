@@ -52,7 +52,7 @@ resource "aws_instance" "instance" {
   key_name                    = "aws-learning-env"
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.instance_sg.id]
-  subnet_id                   = var.subnet_id  # Ensure this is set to a public subnet
+  subnet_id                   = var.subnets[0]  # Ensure this is set to a public subnet
 
   lifecycle {
     create_before_destroy = true
