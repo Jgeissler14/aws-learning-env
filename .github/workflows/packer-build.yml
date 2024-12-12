@@ -1,0 +1,40 @@
+name: Build and Deploy Packer Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-packer-image:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Packer
+      uses: hashicorp/setup-packer@v2
+      with:
+        packer_version: 1.9.4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Validate Packer Template
+      run: |
+        packer validate packer-template.json
+
+    - name: Build Packer Image
+      run: |
+        packer build packer-template.json
+
+    - name: Tag Success
+      if: success()
+      run: |
+        echo "Packer build completed successfully!"

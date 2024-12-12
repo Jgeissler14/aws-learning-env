@@ -1,0 +1,76 @@
+---
+- name: Configure PaaS instance
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Update apt package index (Ubuntu/Debian)
+      apt:
+        update_cache: yes
+        force_apt_get: yes
+
+    - name: Install dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Add user to Docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull sample application Docker image
+      docker_image:
+        name: nginx
+        source: pull
+
+    - name: Ensure NGINX container is running
+      docker_container:
+        name: nginx_paas_demo
+        image: nginx
+        state: started
+        restart_policy: always
+        ports:
+          - "80:80"
+        exposed_ports:
+          - "80"
+
+    - name: Copy custom index.html to Nginx web root
+      copy:
+        src: ./index.html
+        dest: /usr/share/nginx/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Clean up unnecessary packages
+      apt:
+        autoremove: yes
+        purge: yes
+
