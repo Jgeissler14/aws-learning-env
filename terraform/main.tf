@@ -58,7 +58,7 @@ resource "aws_security_group" "instance_sg" {
 }
 
 resource "aws_instance" "instance" {
-  ami                         = "ami-0c774c9ac60ed7576"
+  ami                         = data.aws_ami.nginx.id
   instance_type               = "t2.micro"
   key_name                    = "aws-learning-env"
   associate_public_ip_address = true
