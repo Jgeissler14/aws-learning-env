@@ -94,14 +94,14 @@ resource "aws_lb_target_group" "nginx_tg" {
     interval            = 30
     path                = "/"
     timeout             = 5
-    healthy_threshold   = 0
-    unhealthy_threshold = 2
+    healthy_threshold   = 1
+    unhealthy_threshold = 1
     protocol            = "HTTP"
   }
 
   stickiness {
     enabled = false
-    type = "lb_cookies"
+    type = "lb_cookie"
   }
   depends_on = [ aws_instance.instance ]
 
