@@ -94,8 +94,8 @@ resource "aws_lb_target_group" "nginx_tg" {
     interval            = 30
     path                = "/"
     timeout             = 5
-    healthy_threshold   = 1
-    unhealthy_threshold = 1
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
     protocol            = "HTTP"
   }
 
