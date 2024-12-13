@@ -8,7 +8,7 @@ data "aws_ami" "nginx" {
 }
 
 resource "aws_security_group" "lb_sg" {
-  name_prefix = "nginx-lb-sg"
+  name_prefix = "nginx-lbsg"
 
   ingress {
     from_port   = 80
